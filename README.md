@@ -56,7 +56,16 @@ Pour chaque article collecté :
 
 ![Capture Discord 2](screenshots/discord_screenshot_2.png)
 
+
 ---
+
+## 🖼️ Aperçu du workflow
+
+### Workflow RSS
+![Workflow RSS N8N](screenshots/Workflow_manual.png)
+
+### Workflow LLM
+![Workflow LLM N8N](screenshots/Workflow_IA.png)
 
 ## 🛠️ Stack technique
 
