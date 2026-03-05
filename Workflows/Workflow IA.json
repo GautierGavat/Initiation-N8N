@@ -49,7 +49,7 @@
         0
       ],
       "id": "6482c519-303c-4791-93a6-32e2fef54f49",
-      "name": "HTTP Request"
+      "name": "Serper - Recherche Google"
     },
     {
       "parameters": {
@@ -62,7 +62,7 @@
         0
       ],
       "id": "2d77848e-111e-4903-9815-84449e94cd29",
-      "name": "Code in JavaScript"
+      "name": "Extraction"
     },
     {
       "parameters": {
@@ -98,7 +98,7 @@
         0
       ],
       "id": "5242e3bf-ede0-435e-a347-9a3ca92c0449",
-      "name": "HTTP Request1",
+      "name": "Open Router - LLM",
       "credentials": {
         "openRouterApi": {
           "id": "A43K2T0b3Rar7now",
@@ -109,7 +109,21 @@
     },
     {
       "parameters": {
-        "jsCode": "return $input.all().map(item => {\n  // Récupérer depuis le nœud précédent (Code in JavaScript)\n  const sourceItem = $('Code in JavaScript').all()[item.pairedItem?.item ?? 0];\n  const title = sourceItem?.json?.title || \"Sans titre\";\n  const link = sourceItem?.json?.link || null;\n\n  if (!item.json.choices || !item.json.choices[0]) {\n    return { json: { title, link, resume: \"Erreur de récupération\", importance: \"inconnue\", tags: [] } };\n  }\n\n  const content = item.json.choices[0].message.content;\n  try {\n    const clean = content.replace(/```json|```/g, '').trim();\n    const parsed = JSON.parse(clean);\n    return { json: { title, link, resume: parsed.resume || \"Pas de résumé\", importance: parsed.importance || \"inconnue\", tags: parsed.tags || [] } };\n  } catch(e) {\n    return { json: { title, link, resume: content || \"Pas de résumé\", importance: \"inconnue\", tags: [] } };\n  }\n});"
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1b05c352-fa3b-4d3e-82e9-4a66b65d859b",
+      "name": "Pause anti-rate limit",
+      "webhookId": "16146e30-39c2-43ba-b040-9deb536b6219"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  // Récupérer depuis le nœud précédent (Code in JavaScript)\n  const sourceItem = $('Extraction').all()[item.pairedItem?.item ?? 0];\n  const title = sourceItem?.json?.title || \"Sans titre\";\n  const link = sourceItem?.json?.link || null;\n\n  if (!item.json.choices || !item.json.choices[0]) {\n    return { json: { title, link, resume: \"Erreur de récupération\", importance: \"inconnue\", tags: [] } };\n  }\n\n  const content = item.json.choices[0].message.content;\n  try {\n    const clean = content.replace(/```json|```/g, '').trim();\n    const parsed = JSON.parse(clean);\n    return { json: { title, link, resume: parsed.resume || \"Pas de résumé\", importance: parsed.importance || \"inconnue\", tags: parsed.tags || [] } };\n  } catch(e) {\n    return { json: { title, link, resume: content || \"Pas de résumé\", importance: \"inconnue\", tags: [] } };\n  }\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -118,7 +132,7 @@
         0
       ],
       "id": "110afb20-0fc8-4206-9fbd-f2f2939e2f29",
-      "name": "Code in JavaScript1"
+      "name": "Parsing"
     },
     {
       "parameters": {
@@ -131,7 +145,7 @@
         0
       ],
       "id": "45a9dabe-297b-4e56-9d0d-e19562e93c58",
-      "name": "Code in JavaScript2"
+      "name": "Embedding"
     },
     {
       "parameters": {
@@ -162,21 +176,7 @@
         0
       ],
       "id": "d7ab3acb-f963-4adb-a540-9d7a99497ede",
-      "name": "HTTP Request2"
-    },
-    {
-      "parameters": {
-        "amount": 3
-      },
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        832,
-        0
-      ],
-      "id": "1b05c352-fa3b-4d3e-82e9-4a66b65d859b",
-      "name": "Wait",
-      "webhookId": "16146e30-39c2-43ba-b040-9deb536b6219"
+      "name": "Discord"
     }
   ],
   "pinData": {},
@@ -185,73 +185,73 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "Serper - Recherche Google",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request": {
+    "Serper - Recherche Google": {
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Extraction",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Extraction": {
       "main": [
         [
           {
-            "node": "HTTP Request1",
+            "node": "Open Router - LLM",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request1": {
+    "Open Router - LLM": {
       "main": [
         [
           {
-            "node": "Wait",
+            "node": "Pause anti-rate limit",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript1": {
+    "Pause anti-rate limit": {
       "main": [
         [
           {
-            "node": "Code in JavaScript2",
+            "node": "Parsing",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript2": {
+    "Parsing": {
       "main": [
         [
           {
-            "node": "HTTP Request2",
+            "node": "Embedding",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Wait": {
+    "Embedding": {
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "Discord",
             "type": "main",
             "index": 0
           }
@@ -265,7 +265,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "9e76e9a7-6fb5-4a1a-9e3b-c5e4c59eaad3",
+  "versionId": "7e7524e5-a1db-4caa-a749-1184264126d6",
   "meta": {
     "instanceId": "af4ee9978281459a5fcec1fa1947beb4ebe89515b8416661991badc2ee7efb59"
   },

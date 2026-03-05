@@ -22,59 +22,16 @@
     },
     {
       "parameters": {
-        "url": "https://www.stat4decision.com/fr/feed/",
-        "options": {}
+        "maxItems": 10
       },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.2,
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
       "position": [
-        272,
-        -16
+        1328,
+        -208
       ],
-      "id": "26d0d4b3-000a-4028-9402-b11f110ff158",
-      "name": "RSS Read"
-    },
-    {
-      "parameters": {
-        "url": "https://blog.octo.com/feed/",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.2,
-      "position": [
-        272,
-        -160
-      ],
-      "id": "3dfe0905-49d6-4565-a2a2-646a66caf500",
-      "name": "RSS Read1"
-    },
-    {
-      "parameters": {
-        "url": "https://www.theverge.com/rss/index.xml",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.2,
-      "position": [
-        272,
-        -416
-      ],
-      "id": "3cdf4348-321c-4290-b957-c1a0530cc08f",
-      "name": "RSS Read3"
-    },
-    {
-      "parameters": {
-        "url": "https://techcrunch.com/feed/",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.2,
-      "position": [
-        272,
-        -288
-      ],
-      "id": "59866841-a874-444a-9cc6-3515f44245c4",
-      "name": "RSS Read2"
+      "id": "de004584-b791-48df-94d1-17496f40622d",
+      "name": "Limit"
     },
     {
       "parameters": {
@@ -88,7 +45,63 @@
         -544
       ],
       "id": "7d4f357a-5215-4c38-8d01-0fecf9011404",
-      "name": "RSS Read4"
+      "name": "Towardsdatascience"
+    },
+    {
+      "parameters": {
+        "url": "https://www.theverge.com/rss/index.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        -416
+      ],
+      "id": "3cdf4348-321c-4290-b957-c1a0530cc08f",
+      "name": "theverge.com"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        -288
+      ],
+      "id": "59866841-a874-444a-9cc6-3515f44245c4",
+      "name": "techcrunch"
+    },
+    {
+      "parameters": {
+        "url": "https://blog.octo.com/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        -160
+      ],
+      "id": "3dfe0905-49d6-4565-a2a2-646a66caf500",
+      "name": "blog.octo.com"
+    },
+    {
+      "parameters": {
+        "url": "https://www.stat4decision.com/fr/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        -16
+      ],
+      "id": "26d0d4b3-000a-4028-9402-b11f110ff158",
+      "name": "stat4decision"
     },
     {
       "parameters": {
@@ -101,7 +114,20 @@
         -256
       ],
       "id": "102aa377-6e28-4e8b-9ff1-3abfa7defed2",
-      "name": "Merge"
+      "name": "Fusion"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cutoff = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);\nconsole.log('Cutoff (il y a 24h):', cutoff.toISOString());\n\nconst kept = [];\nfor (const item of $input.all()) {\n  const pub = item.json.pubDate || item.json.isoDate || '';\n  if (!pub) continue;\n  \n  try {\n    const dt = new Date(pub);\n    console.log('Article:', item.json.title, '| Date:', dt.toISOString(), '| Gardé:', dt > cutoff);\n    if (dt > cutoff) {\n      kept.push(item);\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nconsole.log('Total gardés:', kept.length);\nreturn kept;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -208
+      ],
+      "id": "a93401bf-a653-4121-8af6-0e7c1e8a57f6",
+      "name": "Nettoyage"
     },
     {
       "parameters": {
@@ -154,7 +180,7 @@
         -208
       ],
       "id": "caab56cd-e3b8-4e9e-8eaf-12d81a8bf8d3",
-      "name": "Edit Fields"
+      "name": "Normalise"
     },
     {
       "parameters": {
@@ -167,20 +193,7 @@
         -208
       ],
       "id": "f6a3b34f-36ea-4ca3-860c-df50c904f887",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "jsCode": "const cutoff = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);\nconsole.log('Cutoff (il y a 24h):', cutoff.toISOString());\n\nconst kept = [];\nfor (const item of $input.all()) {\n  const pub = item.json.pubDate || item.json.isoDate || '';\n  if (!pub) continue;\n  \n  try {\n    const dt = new Date(pub);\n    console.log('Article:', item.json.title, '| Date:', dt.toISOString(), '| Gardé:', dt > cutoff);\n    if (dt > cutoff) {\n      kept.push(item);\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nconsole.log('Total gardés:', kept.length);\nreturn kept;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        768,
-        -208
-      ],
-      "id": "a93401bf-a653-4121-8af6-0e7c1e8a57f6",
-      "name": "Code in JavaScript1"
+      "name": "Formater Embed"
     },
     {
       "parameters": {
@@ -211,7 +224,7 @@
         -208
       ],
       "id": "264a182a-e182-488f-b082-66500332b5d1",
-      "name": "HTTP Request",
+      "name": "Discord",
       "executeOnce": false,
       "onError": "continueRegularOutput"
     },
@@ -224,21 +237,8 @@
         -208
       ],
       "id": "d35b2ee5-543f-4eed-9ccd-7545a147c26c",
-      "name": "Wait",
+      "name": "anti-rate limit",
       "webhookId": "97d7a2d5-05f5-4532-ab2e-252cb71c7a15"
-    },
-    {
-      "parameters": {
-        "maxItems": 10
-      },
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
-      "position": [
-        1328,
-        -208
-      ],
-      "id": "de004584-b791-48df-94d1-17496f40622d",
-      "name": "Limit"
     }
   ],
   "pinData": {},
@@ -247,137 +247,27 @@
       "main": [
         [
           {
-            "node": "RSS Read",
+            "node": "stat4decision",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RSS Read1",
+            "node": "blog.octo.com",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RSS Read2",
+            "node": "techcrunch",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RSS Read3",
+            "node": "theverge.com",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RSS Read4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "RSS Read": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 4
-          }
-        ]
-      ]
-    },
-    "RSS Read1": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 3
-          }
-        ]
-      ]
-    },
-    "RSS Read3": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "RSS Read2": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "RSS Read4": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Limit",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "Wait",
+            "node": "Towardsdatascience",
             "type": "main",
             "index": 0
           }
@@ -388,7 +278,117 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Towardsdatascience": {
+      "main": [
+        [
+          {
+            "node": "Fusion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "theverge.com": {
+      "main": [
+        [
+          {
+            "node": "Fusion",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "techcrunch": {
+      "main": [
+        [
+          {
+            "node": "Fusion",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "blog.octo.com": {
+      "main": [
+        [
+          {
+            "node": "Fusion",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "stat4decision": {
+      "main": [
+        [
+          {
+            "node": "Fusion",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Fusion": {
+      "main": [
+        [
+          {
+            "node": "Nettoyage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nettoyage": {
+      "main": [
+        [
+          {
+            "node": "Normalise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise": {
+      "main": [
+        [
+          {
+            "node": "Formater Embed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formater Embed": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord": {
+      "main": [
+        [
+          {
+            "node": "anti-rate limit",
             "type": "main",
             "index": 0
           }
@@ -402,7 +402,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "c6e756ed-f5dd-4fd3-8b9d-92be2064bced",
+  "versionId": "7876d6e0-fc2f-4d85-807a-920ec96f9c56",
   "meta": {
     "instanceId": "af4ee9978281459a5fcec1fa1947beb4ebe89515b8416661991badc2ee7efb59"
   },
