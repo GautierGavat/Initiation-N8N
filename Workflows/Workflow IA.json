@@ -1,0 +1,274 @@
+{
+  "name": "Workflow IA",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "273ed370-6a28-4c05-8289-07551e178916",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "3da0532a74d807cc812577f4d0e241816b03a6f2"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"q\": \"intelligence artificielle actualités\",\n  \"gl\": \"fr\",\n  \"hl\": \"fr\",\n  \"num\": 10\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6482c519-303c-4791-93a6-32e2fef54f49",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconsole.log('Clés disponibles:', Object.keys(data));\nconsole.log('Organic:', JSON.stringify(data.organic));\n\nconst results = data.organic || [];\nconsole.log('Nombre résultats:', results.length);\n\nif (results.length === 0) {\n  return [{ json: { debug: \"organic vide\", data: data } }];\n}\n\nreturn results.map(article => ({\n  json: {\n    title: article.title || \"Sans titre\",\n    link: article.link || null,\n    snippet: article.snippet || \"Pas de résumé\",\n    date: article.date || \"Inconnue\"\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2d77848e-111e-4903-9815-84449e94cd29",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemma-3-4b-it:free\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify(\n        \"Tu es un expert en veille IA. Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant/après :\\n\" +\n        \"{\\\"resume\\\": \\\"résumé en 2 phrases en français\\\", \\\"importance\\\": \\\"haute/moyenne/faible\\\", \\\"tags\\\": [\\\"tag1\\\", \\\"tag2\\\"]}\\n\\n\" +\n        \"Titre: \" + $json.title + \"\\n\" +\n        \"Source: \" + $json.source + \"\\n\" +\n        \"Extrait: \" + $json.snippet\n      ) }}\n    }\n  ],\n  \"max_tokens\": 300\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 4000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "5242e3bf-ede0-435e-a347-9a3ca92c0449",
+      "name": "HTTP Request1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "A43K2T0b3Rar7now",
+          "name": "OpenRouter account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  // Récupérer depuis le nœud précédent (Code in JavaScript)\n  const sourceItem = $('Code in JavaScript').all()[item.pairedItem?.item ?? 0];\n  const title = sourceItem?.json?.title || \"Sans titre\";\n  const link = sourceItem?.json?.link || null;\n\n  if (!item.json.choices || !item.json.choices[0]) {\n    return { json: { title, link, resume: \"Erreur de récupération\", importance: \"inconnue\", tags: [] } };\n  }\n\n  const content = item.json.choices[0].message.content;\n  try {\n    const clean = content.replace(/```json|```/g, '').trim();\n    const parsed = JSON.parse(clean);\n    return { json: { title, link, resume: parsed.resume || \"Pas de résumé\", importance: parsed.importance || \"inconnue\", tags: parsed.tags || [] } };\n  } catch(e) {\n    return { json: { title, link, resume: content || \"Pas de résumé\", importance: \"inconnue\", tags: [] } };\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "110afb20-0fc8-4206-9fbd-f2f2939e2f29",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const importanceColor = {\n    \"haute\": 15548997,   // rouge\n    \"moyenne\": 16776960, // jaune\n    \"faible\": 5763719    // vert\n  };\n\n  const color = importanceColor[item.json.importance?.toLowerCase()] || 5814783;\n\n  return {\n    json: {\n      embeds: [{\n        title: (item.json.title || \"Sans titre\").substring(0, 256),\n        url: item.json.link || null,\n        color: color,\n        description: item.json.resume || \"Pas de résumé\",\n        fields: [\n          {\n            name: \"📊 Importance\",\n            value: item.json.importance || \"Inconnue\",\n            inline: true\n          },\n          {\n            name: \"🏷️ Tags\",\n            value: (item.json.tags || []).join(\", \") || \"Aucun\",\n            inline: true\n          }\n        ],\n        footer: { text: \"Veille IA • OpenRouter + Serper\" }\n      }]\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "45a9dabe-297b-4e56-9d0d-e19562e93c58",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discordapp.com/api/webhooks/1478765766672388176/5elDB2dqZQIm_bBmMFRTOOhZ5r7wsiUL4Rz6mOyvP5KKTz2Io7usg9xaFpkkubzpRLyW",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=embeds",
+              "value": "={{ $json.embeds }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "d7ab3acb-f963-4adb-a540-9d7a99497ede",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1b05c352-fa3b-4d3e-82e9-4a66b65d859b",
+      "name": "Wait",
+      "webhookId": "16146e30-39c2-43ba-b040-9deb536b6219"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9e76e9a7-6fb5-4a1a-9e3b-c5e4c59eaad3",
+  "meta": {
+    "instanceId": "af4ee9978281459a5fcec1fa1947beb4ebe89515b8416661991badc2ee7efb59"
+  },
+  "id": "VHoM2L1sPFL264Th",
+  "tags": []
+}
